@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simulador de Financiamiento - Parcelas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f2f2f2;
+    }
+    h1 {
+      text-align: center;
+      color: #2e7d32;
+    }
+    .simulador {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label, input {
+      display: block;
+      margin-bottom: 1rem;
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      margin-top: 2rem;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 0.5rem;
+      text-align: center;
+    }
+    th {
+      background-color: #dcedc8;
+    }
+  </style>
+</head>
+<body>
+  <h1>Simulador de Financiamiento - Parcelas de 0.5 ha</h1>
+  <div class="simulador">
+    <p><strong>Valor de la parcela:</strong> $50.000.000 CLP (fijo)</p>
+    <label>
+      Pie inicial (en millones, mínimo 35):
+      <input type="number" id="pie" value="35" min="35" max="50"/>
+    </label>
+    <label>
+      Valor UF actual (CLP):
+      <input type="number" id="valorUF" value="39174"/>
+    </label>
+    <label>
+      Número de cuotas (3 a 24):
+      <input type="number" id="cuotas" value="12" min="3" max="24"/>
+    </label>
+    <button onclick="calcular()">Calcular</button>
+
+    <div id="resultado" style="margin-top: 20px;"></div>
+    <table id="tablaResultado">
+      <thead>
+        <tr>
+          <th>Cuota #</th>
+          <th>Cuota (UF)</th>
+          <th>Cuota (CLP)</th>
+          <th>Total a Pagar (CLP)</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyTabla">
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    function calcular() {
+      const valorParcela = 50000000;
+      const pieMillones = parseFloat(document.getElementById('pie').value);
+      const valorUF = parseFloat(document.getElementById('valorUF').value);
+      const cuotas = parseInt(document.getElementById('cuotas').value);
+      const interesMensual = 0.005;
+
+      if (isNaN(pieMillones) || pieMillones < 35 || pieMillones > 50) {
+        alert("Ingresa un PIE válido (entre 35 y 50 millones)");
+        return;
+      }
+
+      if (isNaN(cuotas) || cuotas < 3 || cuotas > 24) {
+        alert("El número de cuotas debe estar entre 3 y 24.");
+        return;
+      }
+
+      const pie = pieMillones * 1_000_000;
+      const saldoCLP = valorParcela - pie;
+      const saldoUF = saldoCLP / valorUF;
+      const cuotaUF = (saldoUF * interesMensual) / (1 - Math.pow(1 + interesMensual, -cuotas));
+      const cuotaCLP = cuotaUF * valorUF;
+      const totalCLP = cuotaCLP * cuotas;
+
+      if (cuotaCLP < 100000) {
+        document.getElementById("resultado").innerHTML = `
+          <p style="color: red;"><strong>Advertencia:</strong> La cuota es muy baja para cubrir el financiamiento en ${cuotas} cuotas. Aumenta el PIE o reduce el número de cuotas.</p>`;
+        document.getElementById("tbodyTabla").innerHTML = "";
+        return;
+      }
+
+      document.getElementById("resultado").innerHTML = `
+        <p><strong>Saldo a financiar:</strong> ${saldoCLP.toLocaleString()} CLP (${saldoUF.toFixed(2)} UF)</p>
+        <p><strong>Valor cuota estimada (${cuotas} cuotas):</strong> ${cuotaUF.toFixed(2)} UF ≈ ${cuotaCLP.toLocaleString()} CLP</p>
+        <p><strong>Total a pagar:</strong> ${totalCLP.toLocaleString()} CLP</p>
+      `;
+
+      let tbody = "";
+      for (let i = 1; i <= cuotas; i++) {
+        tbody += `
+          <tr>
+            <td>${i}</td>
+            <td>${cuotaUF.toFixed(2)}</td>
+            <td>${cuotaCLP.toLocaleString()}</td>
+            <td>${(cuotaCLP * i).toLocaleString()}</td>
+          </tr>`;
+      }
+      document.getElementById("tbodyTabla").innerHTML = tbody;
+    }
+
+    window.onload = calcular;
+  </script>
+</body>
+</html>
